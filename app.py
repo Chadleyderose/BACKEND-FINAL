@@ -3,11 +3,17 @@ import sqlite3
 from datetime import datetime
 from flask_cors import CORS
 
+def dict_factory(cursor, row):
+    d = {}
+    for idx, col in enumerate(cursor.description):
+        d[col[0]] = row[idx]
+    return d
+
 
 def init_sqlite_db():
     connection = sqlite3.connect('stock.db')
     connection.execute('CREATE TABLE IF NOT EXISTS items (	"id"INTEGER PRIMARY KEY AUTOINCREMENT,"Name" TEXT NOT NULL,"Type" TEXT NOT NULL)')
-    connection.execute('CREATE TABLE IF NOT EXISTS Users (	"id"INTEGER PRIMARY KEY AUTOINCREMENT,"Username" TEXT NOT NULL,"Password" TEXT NOT NULL, "Is-Admin" TEXT NOT NULL)')
+    connection.execute('CREATE TABLE IF NOT EXISTS Users (id INTEGER PRIMARY KEY AUTOINCREMENT, Username  TEXT, Password INT)')
     connection.execute('CREATE TABLE IF NOT EXISTS Item_Quantity (	"id"INTEGER PRIMARY KEY AUTOINCREMENT,"Item_id" TEXT NOT NULL,"Quantity" INTEGER)')
     print("database stock.db connection was succesfull.")
 
@@ -17,17 +23,12 @@ app = Flask(__name__)
 CORS(app)
 
 
-def dict_factory(cursor, row):
-    d = {}
-    for idx, col in enumerate(cursor.description):
-        d[col[0]] = row[idx]
-    return d
-
 @app.route('/')
+
 @app.route('/new-user/', methods=['POST'])
 def add_users():
-    if request.method== "POST":
-        msg=None
+    msg=None
+    if request.method == "POST":
         try:
             post_data = request.get_json()
             Username = post_data['Username']
@@ -35,25 +36,34 @@ def add_users():
 
             with sqlite3.connect('stock.db') as conn:
                 cur = conn.cursor()
-                conn.row_factory = dict_factory
-                cur.execute("INSERT INTO Users(Username,Password) VALUES(?,?)", (Username,Password))
+                # conn.row_factory = dict_factory
+                cur.execute("INSERT INTO Users(Username, Password) VALUES(?, ?)", (Username, Password))
                 conn.commit()
-                msg = 'Record added'
+                msg = Username + 'Record added'
 
         except Exception as x:
+            conn.rollback()
             msg = 'error'+ str(x)
             
         finally:
-            return{'msg':msg}    
+            conn.close
+            return jsonify(msg)   
 
 @app.route('/users/', methods=['GET'])
 def show_users():
+    records = []
+    try:
         with sqlite3.connect("stock.db") as conn:
             conn.row_factory = dict_factory
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM Users")
-            data=cursor.fetchall()
-        return jsonify(data)
+            records=cursor.fetchall()
+    except Exception as e:
+        conn.rollback()
+        print("THre was an error fetching" + str(e))
+    finally:
+        conn.close()
+        return jsonify(records)
 
 @app.route('/new-items/', methods=['POST'])
 def add_items():

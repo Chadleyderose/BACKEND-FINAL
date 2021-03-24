@@ -12,20 +12,35 @@ def dict_factory(cursor, row):
 
 def init_sqlite_db():
     connection = sqlite3.connect('stock.db')
-    connection.execute('CREATE TABLE IF NOT EXISTS items (	"id"INTEGER PRIMARY KEY AUTOINCREMENT,"Name" TEXT NOT NULL,"Type" TEXT NOT NULL)')
-    connection.execute('CREATE TABLE IF NOT EXISTS Users (id INTEGER PRIMARY KEY AUTOINCREMENT, Username  TEXT, Password INT)')
-    connection.execute('CREATE TABLE IF NOT EXISTS Item_Quantity (	"id"INTEGER PRIMARY KEY AUTOINCREMENT,"Item_id" TEXT NOT NULL,"Quantity" INTEGER)')
+    connection.execute('CREATE TABLE IF NOT EXISTS Users (id INTEGER PRIMARY KEY AUTOINCREMENT, Username  TEXT, Password TEXT)')
+    # connection.execute('CREATE TABLE IF NOT EXISTS kitchen (id INTEGER PRIMARY KEY AUTOINCREMENT, Username  TEXT, Password INT)')
+    # connection.execute('CREATE TABLE IF NOT EXISTS equipment (id INTEGER PRIMARY KEY AUTOINCREMENT, Username  TEXT, Password INT)')
+    # connection.execute('CREATE TABLE IF NOT EXISTS food (id INTEGER PRIMARY KEY AUTOINCREMENT, Username  TEXT, Password INT)')
+
     print("database stock.db connection was succesfull.")
 
 
 init_sqlite_db()
+
+def add_admin():
+    username = "admin"
+    password = "admin"
+    conn = sqlite3.connect('stock.db')
+    conn.execute('INSERT INTO Users (Username, Password) VALUES(?, ?)', (username, password))
+    conn.commit()
+    print("Admin has been created")
+    conn.close()
+
+
+add_admin()
+
+
 app = Flask(__name__)
 CORS(app)
 
 
 @app.route('/')
-
-@app.route('/new-user/', methods=['POST'])
+@app.route('/new_user/', methods=['POST'])
 def add_users():
     msg=None
     if request.method == "POST":
@@ -36,7 +51,7 @@ def add_users():
 
             with sqlite3.connect('stock.db') as conn:
                 cur = conn.cursor()
-                # conn.row_factory = dict_factory
+                conn.row_factory = dict_factory
                 cur.execute("INSERT INTO Users(Username, Password) VALUES(?, ?)", (Username, Password))
                 conn.commit()
                 msg = Username + 'Record added'
@@ -46,7 +61,7 @@ def add_users():
             msg = 'error'+ str(x)
             
         finally:
-            conn.close
+            conn.close()
             return jsonify(msg)   
 
 @app.route('/users/', methods=['GET'])
@@ -65,64 +80,64 @@ def show_users():
         conn.close()
         return jsonify(records)
 
-@app.route('/new-items/', methods=['POST'])
-def add_items():
-    if request.method== "POST":
-        msg=None
-        try:
-            post_data = request.get_json()
-            Name = post_data['Name']
-            Type = post_data['Type']
+# @app.route('/kitchen/', methods=['POST'])
+# def add_to_kitchen():
+#     if request.method== "POST":
+#         msg=None
+#         try:
+#             post_data = request.get_json()
+#             Name = post_data['Name']
+#             Type = post_data['Type']
 
-            with sqlite3.connect('stock.db') as conn:
-                cur = conn.cursor()
-                conn.row_factory = dict_factory
-                cur.execute("INSERT INTO items(Name,Type) VALUES(?,?)", (Name,Type))
-                conn.commit()
-                msg  = "Item added"
-        except Exception as x:
-            msg = 'error'+ str(x)
-        finally:
-            return{'msg':msg}    
+#             with sqlite3.connect('stock.db') as conn:
+#                 cur = conn.cursor()
+#                 conn.row_factory = dict_factory
+#                 cur.execute("INSERT INTO kitchen")
+#                 conn.commit()
+#                 msg  = "Item added"
+#         except Exception as x:
+#             msg = 'error'+ str(x)
+#         finally:
+#             return{'msg':msg}    
  
 
-@app.route('/items/', methods=['GET'])
-def show_items():
-    with sqlite3.connect("stock.db") as conn:
-        conn.row_factory = dict_factory
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM Items")
-        data = cursor.fetchall()
-    return jsonify(data)
+# @app.route('/kitchen_show/', methods=['GET'])
+# def show_items():
+#     with sqlite3.connect("stock.db") as conn:
+#         conn.row_factory = dict_factory
+#         cursor = conn.cursor()
+#         cursor.execute("SELECT * FROM kitchen")
+#         data = cursor.fetchall()
+#     return jsonify(data)
 
-@app.route('/new-item-qty/', methods=['POST'])
-def add_item_qty():
-    if request.method== "POST":
-        msg=None
-        try:
-            post_data = request.get_json()
-            Item_id = post_data['Item_id']
-            Quantity = post_data['Quantity']
+# @app.route('/equipment/', methods=['POST'])
+# def add_to_kitchen():
+#     if request.method== "POST":
+#         msg=None
+#         try:
+#             post_data = request.get_json()
+#             Name = post_data['Name']
+#             Type = post_data['Type']
 
-            with sqlite3.connect('stock.db') as conn:
-                cur = conn.cursor()
-                conn.row_factory = dict_factory
-                cur.execute("INSERT INTO items(Item_id,Quantity) VALUES(?,?)", (Item_id,Quantity))
-                conn.commit()
-                msg  = "Item Quantity added"
-        except Exception as x:
-            msg = 'error'+ str(x)
-        finally:
-            return{'msg':msg}   
+#             with sqlite3.connect('stock.db') as conn:
+#                 cur = conn.cursor()
+#                 conn.row_factory = dict_factory
+#                 cur.execute("INSERT INTO equipment")
+#                 conn.commit()
+#                 msg  = "Item added"
+#         except Exception as x:
+#             msg = 'error'+ str(x)
+#         finally:
+#             return{'msg':msg}    
+ 
 
-@app.route('/item-qty/', methods=['GET'])
-def show_item_quantity():
-    with sqlite3.connect("stock.db") as conn:
-        conn.row_factory = dict_factory
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM Item_Quantity")
-        data = cursor.fetchall()
-    return jsonify(data)
+# @app.route('/food/', methods=['GET'])
+# def show_items():
+#     with sqlite3.connect("stock.db") as conn:
+#         conn.row_factory = dict_factory
+#         cursor.execute("SELECT * FROM food")
+#         data = cursor.fetchall()
+#     return jsonify(data)
 
 
 if __name__ == ('__main__'):

@@ -1,7 +1,7 @@
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, jsonify, request
 import sqlite3
-from datetime import datetime
 from flask_cors import CORS
+
 
 def dict_factory(cursor, row):
     d = {}
@@ -13,14 +13,15 @@ def dict_factory(cursor, row):
 def init_sqlite_db():
     connection = sqlite3.connect('stock.db')
     connection.execute('CREATE TABLE IF NOT EXISTS Users (id INTEGER PRIMARY KEY AUTOINCREMENT, Username  TEXT, Password TEXT)')
-#     connection.execute('CREATE TABLE IF NOT EXISTS kitchen (id INTEGER PRIMARY KEY AUTOINCREMENT, Username  TEXT, Password INT)')
-#     connection.execute('CREATE TABLE IF NOT EXISTS equipment (id INTEGER PRIMARY KEY AUTOINCREMENT, Username  TEXT, Password INT)')
-#     connection.execute('CREATE TABLE IF NOT EXISTS food (id INTEGER PRIMARY KEY AUTOINCREMENT, Username  TEXT, Password INT)')
+    connection.execute('CREATE TABLE IF NOT EXISTS kitchen (id INTEGER PRIMARY KEY AUTOINCREMENT, Username  TEXT, Password INT)')
+    connection.execute('CREATE TABLE IF NOT EXISTS equipment (id INTEGER PRIMARY KEY AUTOINCREMENT, Username  TEXT, Password INT)')
+    connection.execute('CREATE TABLE IF NOT EXISTS food (id INTEGER PRIMARY KEY AUTOINCREMENT, Username  TEXT, Password INT)')
 
-    print("database stock.db connection was succesfull.")
+    print("database stock.db connection was successful.")
 
 
 init_sqlite_db()
+
 
 def add_admin():
     username = "admin"
@@ -40,29 +41,30 @@ CORS(app)
 
 
 @app.route('/')
-@app.route('/new_user/', methods=['POST'])
+@app.route('/new-user/', methods=['POST'])
 def add_users():
-    msg=None
+    msg = None
     if request.method == "POST":
         try:
             post_data = request.get_json()
-            Username = post_data['Username']
-            Password = post_data['Password']
+            username = post_data['Username']
+            password = post_data['Password']
 
             with sqlite3.connect('stock.db') as conn:
                 cur = conn.cursor()
                 conn.row_factory = dict_factory
-                cur.execute("INSERT INTO Users(Username, Password) VALUES(?, ?)", (Username, Password))
+                cur.execute("INSERT INTO Users(Username, Password) VALUES(?, ?)", (username, password))
                 conn.commit()
-                msg = Username + 'Record added'
+                msg = username + 'Record added'
 
         except Exception as x:
             conn.rollback()
-            msg = 'error'+ str(x)
+            msg = 'error' + str(x)
             
         finally:
             conn.close()
             return jsonify(msg)   
+
 
 @app.route('/users/', methods=['GET'])
 def show_users():
@@ -72,7 +74,7 @@ def show_users():
             conn.row_factory = dict_factory
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM Users")
-            records=cursor.fetchall()
+            records = cursor.fetchall()
     except Exception as e:
         conn.rollback()
         print("THre was an error fetching" + str(e))
@@ -160,5 +162,5 @@ def show_users():
 #     return jsonify(data)
 
 
-if __name__ == ('__main__'):
+if __name__ == '__main__':
     app.run(debug=True)
